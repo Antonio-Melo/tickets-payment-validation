@@ -13,7 +13,17 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import com.google.zxing.Result;
+import com.loopj.android.http.*;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+import cz.msebera.android.httpclient.message.BasicHeader;
+import cz.msebera.android.httpclient.protocol.HTTP;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 import static android.Manifest.permission.CAMERA;
@@ -27,16 +37,20 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        scannerView = new ZXingScannerView(this);
+        scannerView = new ZXingScannerView( this);
         setContentView(scannerView);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
             if(hasPermission()){
-                Toast.makeText(MainActivity.this, "Permission is granted!", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Permission is granted!", Toast.LENGTH_LONG).show();
             } else {
                 requestCameraPermission();
             }
         }
+    }
+
+    private boolean hasPermission() {
+        return (ContextCompat.checkSelfPermission(getApplicationContext(), CAMERA) == PackageManager.PERMISSION_GRANTED);
     }
 
     private void requestCameraPermission() {
@@ -74,14 +88,15 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
     public void onResume(){
         super.onResume();
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+        if(currentapiVersion >= android.os.Build.VERSION_CODES.M){
             if(hasPermission()){
                 if(scannerView == null){
                     scannerView = new ZXingScannerView(this);
                     setContentView(scannerView);
-                    scannerView.setResultHandler(this);
-                    scannerView.startCamera();
                 }
+                scannerView.setResultHandler(this);
+                scannerView.startCamera();
             } else {
                 requestCameraPermission();
             }
@@ -104,14 +119,60 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
 
     }
 
-    private boolean hasPermission() {
-        return (ContextCompat.checkSelfPermission(MainActivity.this, CAMERA) == PackageManager.PERMISSION_GRANTED);
-    }
-
 
     @Override
     public void handleResult(final Result result) {
         final String scanResult = result.getText();
+
+
+        try {
+            StringEntity body = new StringEntity(scanResult);
+            body.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+            AsyncHttpClient client = new AsyncHttpClient();
+
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            client.post(null,"http://10.0.2.2:3000/validation/tickets", body, "application/json", new AsyncHttpResponseHandler() {
+
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    System.out.println("STATUS CODE: " +statusCode);
+                    builder.setTitle("Ticket(s) validation");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            scannerView.resumeCameraPreview(MainActivity.this);
+                        }
+                    });
+                    AlertDialog alert = builder.create();
+                    alert.show();
+
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    System.out.println("STATUS CODE: " +statusCode);
+                    System.out.println(error);
+                    builder.setTitle("Error validating ticket(s)");
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            scannerView.resumeCameraPreview(MainActivity.this);
+                        }
+                    });
+                    AlertDialog alert = builder.create();
+                    alert.show();
+                }
+            });
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+
+
+        /*
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Scan result");
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -129,6 +190,6 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
         });
         builder.setMessage(scanResult);
         AlertDialog alert = builder.create();
-        alert.show();
+        alert.show();*/
     }
 }
