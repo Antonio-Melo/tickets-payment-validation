@@ -169,27 +169,5 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-
-
-
-        /*
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Scan result");
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                scannerView.resumeCameraPreview(MainActivity.this);
-            }
-        });
-        builder.setNeutralButton("Visit", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(scanResult));
-                startActivity(intent);
-            }
-        });
-        builder.setMessage(scanResult);
-        AlertDialog alert = builder.create();
-        alert.show();*/
     }
 }
