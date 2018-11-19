@@ -30,6 +30,10 @@ import static android.Manifest.permission.CAMERA;
 
 public class MainActivity extends AppCompatActivity implements ZXingScannerView.ResultHandler {
 
+    private static final String LOCAL_IP_ADDRESS = "10.227.151.20:3000";
+    private static final String PUBLIC_IP_ADDRESS = "tickets-payment-rest-api.herokuapp.com";
+    private static String server_ip = PUBLIC_IP_ADDRESS;
+
     private static final int REQUEST_CAMERA = 1;
     private ZXingScannerView scannerView;
 
@@ -133,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements ZXingScannerView.
 
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-            client.post(null,"http://10.0.2.2:3000/validation/tickets", body, "application/json", new AsyncHttpResponseHandler() {
+            client.post(null,"http://" + server_ip + "/validation/tickets", body, "application/json", new AsyncHttpResponseHandler() {
 
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
